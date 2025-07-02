@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import { Book } from "../models/book.model";
+import { Borrow } from "../models/borrow.model";
 
 // Create Book
 export const createBook = async (
@@ -61,9 +62,35 @@ export const getAllBooks = async (
       filter.author = { $regex: req.query.author, $options: "i" };
     }
 
-    // Text search
+    // Improved search logic to avoid MongoDB $text + $or indexing issues
     if (req.query.search) {
-      filter.$text = { $search: req.query.search as string };
+      const searchTerm = req.query.search as string;
+
+      // Try text search first for better performance on indexed fields
+      // If that fails or returns no results, fall back to regex search
+      try {
+        const textSearchFilter = { ...filter, $text: { $search: searchTerm } };
+        const textResults = await Book.find(textSearchFilter).limit(1);
+
+        if (textResults.length > 0) {
+          // Text search works and found results, use it
+          filter.$text = { $search: searchTerm };
+        } else {
+          // No results from text search, use regex search
+          filter.$or = [
+            { title: { $regex: searchTerm, $options: "i" } },
+            { author: { $regex: searchTerm, $options: "i" } },
+            { isbn: { $regex: searchTerm, $options: "i" } },
+          ];
+        }
+      } catch (textSearchError) {
+        // Text search failed (possibly no text index), fall back to regex
+        filter.$or = [
+          { title: { $regex: searchTerm, $options: "i" } },
+          { author: { $regex: searchTerm, $options: "i" } },
+          { isbn: { $regex: searchTerm, $options: "i" } },
+        ];
+      }
     }
 
     // Build sort object
@@ -254,10 +281,15 @@ export const deleteBook = async (
       return;
     }
 
+    // Delete all borrow records associated with this book
+    await Borrow.deleteMany({ book: id });
+
+    // Delete the book
     await Book.findByIdAndDelete(id);
+
     res.json({
       success: true,
-      message: "Book deleted successfully",
+      message: "Book and associated borrow records deleted successfully",
     });
   } catch (err) {
     next(err);
