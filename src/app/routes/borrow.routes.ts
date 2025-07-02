@@ -1,11 +1,11 @@
 import express from "express";
 import {
-    borrowBook,
-    getAllBorrows,
-    getBorrowStatistics,
-    getBorrowSummary,
-    getOverdueBooks,
-    getTotalBorrowedForBook,
+  borrowBook,
+  getAllBorrows,
+  getBorrowStatistics,
+  getBorrowSummary,
+  getOverdueBooks,
+  getTotalBorrowedForBook,
 } from "../controller/borrow.controller";
 import { createBorrowValidation } from "../middlewares/validate.middleware";
 

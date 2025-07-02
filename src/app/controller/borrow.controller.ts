@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { Book } from "../models/book.model";
 import { Borrow } from "../models/borrow.model";
 
-// Borrow a Book (now handled by middleware)
+// Borrow a Book
 export const borrowBook = async (
   req: Request,
   res: Response,
@@ -12,83 +12,80 @@ export const borrowBook = async (
   try {
     const { book: bookId, quantity, dueDate } = req.body;
 
-    // Validate ObjectId
+    // Validate inputs
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
-      res.status(400).json({ 
-        success: false, 
-        message: "Invalid book ID format" 
-      });
+      res.status(400).json({ success: false, message: "Invalid book ID" });
       return;
     }
 
-    // Validate quantity
     if (!quantity || quantity < 1) {
-      res.status(400).json({
-        success: false,
-        message: "Quantity must be at least 1"
-      });
+      res.status(400).json({ success: false, message: "Quantity must be at least 1" });
       return;
     }
 
-    // Validate due date
     if (!dueDate || new Date(dueDate) <= new Date()) {
-      res.status(400).json({
-        success: false,
-        message: "Due date must be in the future"
-      });
+      res.status(400).json({ success: false, message: "Due date must be in the future" });
       return;
     }
 
-    // Check if book exists and has enough copies
-    const book = await Book.findById(bookId);
+    // Use atomic update to prevent race conditions
+    const book = await Book.findOneAndUpdate(
+      {
+        _id: bookId,
+        available: true,
+        copies: { $gte: quantity }
+      },
+      {
+        $inc: { copies: -quantity }
+      },
+      { new: true }
+    );
+
     if (!book) {
-      res.status(404).json({
-        success: false,
-        message: "Book not found"
-      });
-      return;
-    }
-
-    if (!book.available || book.copies < quantity) {
       res.status(400).json({
         success: false,
-        message: `Not enough copies available. Only ${book.copies} copies left.`
+        message: "Book not available or insufficient copies"
       });
       return;
     }
 
-    // Create borrow entry (middleware will handle book update)
+    // Update availability if no copies left
+    if (book.copies <= 0) {
+      book.available = false;
+      await book.save();
+    }
+
+    // Create borrow record
     const borrowEntry = await Borrow.create({
       book: bookId,
       quantity,
-      dueDate: new Date(dueDate),
+      dueDate: new Date(dueDate)
     });
 
-    // Populate book details for response
     await borrowEntry.populate('book', 'title author isbn');
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: "Book borrowed successfully",
-      data: borrowEntry 
+      data: borrowEntry
     });
-  } catch (err: any) {
-    if (err.name === 'ValidationError') {
+
+  } catch (error: any) {
+    console.error("Borrow error:", error);
+    
+    if (error.name === 'ValidationError') {
       res.status(400).json({
         success: false,
         message: "Validation failed",
-        errors: err.errors
+        errors: Object.values(error.errors).map((err: any) => err.message)
       });
       return;
     }
-    if (err.message && err.message.includes('Not enough copies')) {
-      res.status(400).json({
-        success: false,
-        message: err.message
-      });
-      return;
-    }
-    next(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to borrow book"
+    });
   }
 };
 
@@ -97,39 +94,32 @@ export const getAllBorrows = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Build filter object
+    // Build filter
     const filter: any = {};
-    
-    if (req.query.book) {
-      filter.book = req.query.book;
-    }
-    
-    if (req.query.overdue === 'true') {
-      filter.dueDate = { $lt: new Date() };
-    }
+    if (req.query.book) filter.book = req.query.book;
+    if (req.query.overdue === 'true') filter.dueDate = { $lt: new Date() };
 
-    // Build sort object
-    let sort: any = { createdAt: -1 };
-    if (req.query.sortBy) {
-      const sortBy = req.query.sortBy as string;
-      const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
-      sort = { [sortBy]: sortOrder };
-    }
+    // Build sort
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
+    const sort = { [sortBy]: sortOrder } as any;
 
-    const borrows = await Borrow.find(filter)
-      .populate("book", "title author isbn genre")
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const [borrows, total] = await Promise.all([
+      Borrow.find(filter)
+        .populate("book", "title author isbn genre")
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Borrow.countDocuments(filter)
+    ]);
 
-    const total = await Borrow.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
     res.json({ 
@@ -143,17 +133,17 @@ export const getAllBorrows = async (
         hasPrev: page > 1
       }
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
-// Borrow Summary (Enhanced Aggregation)
+// Get Borrow Summary
 export const getBorrowSummary = async (
   _req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const summary = await Borrow.getBorrowSummary();
     res.json({ 
@@ -161,8 +151,8 @@ export const getBorrowSummary = async (
       data: summary,
       count: summary.length
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -171,7 +161,7 @@ export const getOverdueBooks = async (
   _req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const overdueBooks = await Borrow.getOverdueBooks();
     res.json({ 
@@ -231,7 +221,7 @@ export const getBorrowStatistics = async (
   _req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const stats = await Borrow.aggregate([
       {

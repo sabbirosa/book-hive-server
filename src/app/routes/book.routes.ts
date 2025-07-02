@@ -1,15 +1,18 @@
 import express from "express";
 import {
-    createBook,
-    deleteBook,
-    getAllBooks,
-    getAvailableBooks,
-    getBookById,
-    getBooksByGenre,
-    updateBook,
-    updateBookAvailability,
+  createBook,
+  deleteBook,
+  getAllBooks,
+  getAvailableBooks,
+  getBookById,
+  getBooksByGenre,
+  updateBook,
+  updateBookAvailability,
 } from "../controller/book.controller";
-import { createBookValidation, updateBookValidation } from "../middlewares/validate.middleware";
+import {
+  createBookValidation,
+  updateBookValidation,
+} from "../middlewares/validate.middleware";
 
 const router = express.Router();
 
@@ -29,10 +32,10 @@ router.get("/:id", getBookById);
 router.post("/", createBookValidation, createBook);
 
 // Update book
-router.patch("/:id", updateBookValidation, updateBook);
+router.put("/:id", updateBookValidation, updateBook);
 
 // Update book availability
-router.patch("/:id/availability", updateBookAvailability);
+router.put("/:id/availability", updateBookAvailability);
 
 // Delete book
 router.delete("/:id", deleteBook);

@@ -19,58 +19,48 @@ export interface IBookModel extends Model<IBook> {
 
 const bookSchema = new Schema<IBook>(
   {
-    title: { 
-      type: String, 
-      required: [true, 'Title is required'],
+    title: {
+      type: String,
+      required: [true, "Title is required"],
       trim: true,
-      minlength: [1, 'Title cannot be empty'],
-      maxlength: [200, 'Title cannot exceed 200 characters']
+      minlength: [1, "Title cannot be empty"],
+      maxlength: [200, "Title cannot exceed 200 characters"],
     },
-    author: { 
-      type: String, 
-      required: [true, 'Author is required'],
+    author: {
+      type: String,
+      required: [true, "Author is required"],
       trim: true,
-      minlength: [1, 'Author cannot be empty'],
-      maxlength: [100, 'Author cannot exceed 100 characters']
+      minlength: [1, "Author cannot be empty"],
+      maxlength: [100, "Author cannot exceed 100 characters"],
     },
-    genre: { 
-      type: String, 
-      required: [true, 'Genre is required'],
+    genre: {
+      type: String,
+      required: [true, "Genre is required"],
       trim: true,
-      enum: {
-        values: ['FICTION', 'NON_FICTION', 'SCIENCE', 'HISTORY', 'BIOGRAPHY', 'FANTASY'],
-        message: 'Genre must be one of: FICTION, NON_FICTION, SCIENCE, HISTORY, BIOGRAPHY, FANTASY'
-      }
     },
-    isbn: { 
-      type: String, 
-      required: [true, 'ISBN is required'],
+    isbn: {
+      type: String,
+      required: [true, "ISBN is required"],
       unique: true,
       trim: true,
-      validate: {
-        validator: function(v: string) {
-          return /^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/.test(v);
-        },
-        message: 'Please enter a valid ISBN'
-      }
     },
-    description: { 
+    description: {
       type: String,
       trim: true,
-      maxlength: [1000, 'Description cannot exceed 1000 characters']
+      maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
-    copies: { 
-      type: Number, 
-      required: [true, 'Number of copies is required'],
-      min: [0, 'Copies cannot be negative'],
+    copies: {
+      type: Number,
+      required: [true, "Number of copies is required"],
+      min: [0, "Copies cannot be negative"],
       validate: {
         validator: Number.isInteger,
-        message: 'Copies must be a whole number'
-      }
+        message: "Copies must be a whole number",
+      },
     },
-    available: { 
-      type: Boolean, 
-      default: true 
+    available: {
+      type: Boolean,
+      default: true,
     },
   },
   {
@@ -82,10 +72,10 @@ const bookSchema = new Schema<IBook>(
 bookSchema.index({ isbn: 1 });
 bookSchema.index({ genre: 1 });
 bookSchema.index({ available: 1 });
-bookSchema.index({ title: 'text', author: 'text' }); // Text search
+bookSchema.index({ title: "text", author: "text" }); // Text search
 
 // Pre-save middleware to set availability
-bookSchema.pre('save', function(next) {
+bookSchema.pre("save", function (next) {
   if (this.copies <= 0) {
     this.available = false;
   } else if (this.copies > 0 && !this.available) {
@@ -95,29 +85,31 @@ bookSchema.pre('save', function(next) {
 });
 
 // Post-save middleware for logging
-bookSchema.post('save', function(doc) {
-  console.log(`Book saved: ${doc.title} - Available: ${doc.available}, Copies: ${doc.copies}`);
+bookSchema.post("save", function (doc) {
+  console.log(
+    `Book saved: ${doc.title} - Available: ${doc.available}, Copies: ${doc.copies}`
+  );
 });
 
 // Instance method to check availability
-bookSchema.methods.isAvailable = function(): boolean {
+bookSchema.methods.isAvailable = function (): boolean {
   return this.available && this.copies > 0;
 };
 
 // Instance method to update availability based on copies
-bookSchema.methods.updateAvailability = async function(): Promise<void> {
+bookSchema.methods.updateAvailability = async function (): Promise<void> {
   this.available = this.copies > 0;
   await this.save();
 };
 
 // Static method to find available books
-bookSchema.statics.findAvailableBooks = function(): Promise<IBook[]> {
+bookSchema.statics.findAvailableBooks = function (): Promise<IBook[]> {
   return this.find({ available: true, copies: { $gt: 0 } });
 };
 
 // Static method to find books by genre
-bookSchema.statics.findByGenre = function(genre: string): Promise<IBook[]> {
-  return this.find({ genre: genre.toUpperCase() });
+bookSchema.statics.findByGenre = function (genre: string): Promise<IBook[]> {
+  return this.find({ genre: genre });
 };
 
 export const Book = model<IBook, IBookModel>("Book", bookSchema);

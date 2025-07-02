@@ -21,7 +21,7 @@ app.use("/api", router);
 
 // Health check route
 app.get("/", (req: Request, res: Response) => {
-  res.send("LibHero API is running!");
+  res.send("BookHive API is running!");
 });
 app.use(errorMiddleware);
 

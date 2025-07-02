@@ -50,39 +50,7 @@ borrowSchema.index({ book: 1 });
 borrowSchema.index({ dueDate: 1 });
 borrowSchema.index({ createdAt: -1 });
 
-// Pre-save middleware for validation
-borrowSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    const Book = model('Book');
-    const book = await Book.findById(this.book);
-    
-    if (!book) {
-      throw new Error('Book not found');
-    }
-    
-    if (!book.available || book.copies < this.quantity) {
-      throw new Error('Not enough copies available for borrowing');
-    }
-  }
-  next();
-});
-
-// Post-save middleware to update book copies
-borrowSchema.post('save', async function(doc) {
-  if (doc.isNew) {
-    const Book = model('Book');
-    const book = await Book.findById(doc.book);
-    
-    if (book) {
-      book.copies -= doc.quantity;
-      if (book.copies <= 0) {
-        book.available = false;
-      }
-      await book.save();
-      console.log(`Book borrowed: ${book.title} - Remaining copies: ${book.copies}`);
-    }
-  }
-});
+// Removed middleware - using atomic operations in controller instead
 
 // Instance method to check if book is overdue
 borrowSchema.methods.isOverdue = function(): boolean {
@@ -95,7 +63,7 @@ borrowSchema.statics.getBorrowSummary = function(): Promise<any[]> {
     {
       $group: {
         _id: "$book",
-        totalBorrowed: { $sum: "$quantity" },
+        totalQuantityBorrowed: { $sum: "$quantity" },
         borrowCount: { $sum: 1 },
         lastBorrowDate: { $max: "$createdAt" }
       },
@@ -105,28 +73,29 @@ borrowSchema.statics.getBorrowSummary = function(): Promise<any[]> {
         from: "books",
         localField: "_id",
         foreignField: "_id",
-        as: "bookDetails",
+        as: "book",
       },
     },
     {
-      $unwind: "$bookDetails",
+      $unwind: "$book",
     },
     {
       $project: {
-        _id: 0,
-        bookId: "$_id",
-        title: "$bookDetails.title",
-        author: "$bookDetails.author",
-        isbn: "$bookDetails.isbn",
-        genre: "$bookDetails.genre",
-        totalBorrowed: 1,
+        _id: "$_id",
+        book: {
+          _id: "$book._id",
+          title: "$book.title",
+          author: "$book.author",
+          isbn: "$book.isbn",
+          genre: "$book.genre"
+        },
+        totalQuantityBorrowed: 1,
         borrowCount: 1,
-        lastBorrowDate: 1,
-        availableCopies: "$bookDetails.copies"
+        lastBorrowDate: 1
       },
     },
     {
-      $sort: { totalBorrowed: -1 }
+      $sort: { totalQuantityBorrowed: -1 }
     }
   ]);
 };
