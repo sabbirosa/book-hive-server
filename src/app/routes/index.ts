@@ -2,7 +2,7 @@ import express from "express";
 import { BookRoutes } from "./book.routes";
 import { BorrowRoutes } from "./borrow.routes";
 
-export const AppRouter = express.Router();
+export const router = express.Router();
 
-AppRouter.use("/books", BookRoutes);
-AppRouter.use("/borrows", BorrowRoutes);
+router.use("/books", BookRoutes);
+router.use("/borrows", BorrowRoutes);
