@@ -1,258 +1,321 @@
-# Book Hive Server 📚
+# BookHive Server
 
-A minimal library management system backend built with Node.js, Express, TypeScript, and MongoDB.
+A robust backend API for the BookHive library management system, providing comprehensive book and borrowing management functionality.
 
-## Features
+## 🚀 Features
 
-✅ **Complete Book Management**
-- CRUD operations for books
-- Pagination and filtering
-- Text search capabilities
-- Genre-based filtering
-- Availability management
+- **RESTful API**: Complete REST API for book and borrow management
+- **Book Management**: CRUD operations for book catalog
+- **Borrowing System**: Track book borrowing and returns
+- **Data Validation**: Comprehensive input validation and error handling
+- **Database Integration**: MongoDB with Mongoose ODM
+- **TypeScript**: Full TypeScript support for type safety
+- **Scalable Architecture**: Modular design with separation of concerns
 
-✅ **Borrow Management**
-- Book borrowing with quantity validation
-- Due date management
-- Overdue book tracking
-- Comprehensive borrow statistics
+## 🛠️ Tech Stack
 
-✅ **Advanced MongoDB Features**
-- Aggregation pipelines for analytics
-- Mongoose middleware (pre/post hooks)
-- Static and instance methods
-- Proper indexing for performance
-
-✅ **Robust Error Handling**
-- Consistent error responses
-- Validation error handling
-- MongoDB error handling
-- Development/production error modes
-
-## Tech Stack
-
-- **Runtime**: Node.js
+- **Runtime**: Node.js with TypeScript
 - **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: MongoDB with Mongoose
-- **Validation**: Mongoose built-in validators
+- **Database**: MongoDB with Mongoose ODM
+- **Validation**: Built-in middleware validation
+- **CORS**: Cross-origin resource sharing enabled
+- **Development**: ts-node-dev for hot reloading
+- **Deployment**: Vercel-ready configuration
 
-## API Endpoints
+## 📋 Prerequisites
 
-### Books
+- **Node.js**: Version 18 or higher
+- **MongoDB**: Local installation or MongoDB Atlas account
+- **npm**: Version 8 or higher
 
-| Method | Endpoint | Description | Query Parameters |
-|--------|----------|-------------|------------------|
-| GET | `/api/books` | Get all books with pagination | `page`, `limit`, `genre`, `available`, `author`, `search`, `sortBy`, `sortOrder` |
-| GET | `/api/books/available` | Get only available books | - |
-| GET | `/api/books/genre/:genre` | Get books by genre | - |
-| GET | `/api/books/:id` | Get single book | - |
-| POST | `/api/books` | Create new book | - |
-| PATCH | `/api/books/:id` | Update book | - |
-| PATCH | `/api/books/:id/availability` | Update book availability | - |
-| DELETE | `/api/books/:id` | Delete book | - |
-
-### Borrows
-
-| Method | Endpoint | Description | Query Parameters |
-|--------|----------|-------------|------------------|
-| GET | `/api/borrows` | Get all borrows with pagination | `page`, `limit`, `book`, `overdue`, `sortBy`, `sortOrder` |
-| POST | `/api/borrows` | Borrow a book | - |
-| GET | `/api/borrows/summary` | Get borrow summary (aggregation) | - |
-| GET | `/api/borrows/overdue` | Get overdue books | - |
-| GET | `/api/borrows/statistics` | Get borrow statistics | - |
-| GET | `/api/borrows/book/:bookId` | Get total borrowed for specific book | - |
-
-## Request/Response Examples
-
-### Create Book
-```bash
-POST /api/books
-Content-Type: application/json
-
-{
-  "title": "The Great Gatsby",
-  "author": "F. Scott Fitzgerald",
-  "genre": "FICTION",
-  "isbn": "978-0-7432-7356-5",
-  "description": "A classic American novel",
-  "copies": 5
-}
-```
-
-### Borrow Book
-```bash
-POST /api/borrows
-Content-Type: application/json
-
-{
-  "book": "64f8a1b2c3d4e5f6789abcde",
-  "quantity": 2,
-  "dueDate": "2024-02-15T00:00:00.000Z"
-}
-```
-
-### Get Books with Filters
-```bash
-GET /api/books?page=1&limit=10&genre=FICTION&available=true&search=gatsby
-```
-
-## Setup Instructions
-
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (running locally or remote connection)
-- npm or yarn
+## 🚀 Getting Started
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/sabbirosa/book-hive-server
    cd book-hive-server
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
-3. **Setup environment variables**
+3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
-   ```
-   Edit `.env` with your configuration:
-   ```env
-   PORT=5000
-   NODE_ENV=development
-   MONGODB_URI=mongodb://localhost:27017/book-hive
+   # Edit .env with your configuration
    ```
 
-4. **Start the server**
+4. **Start the development server**
    ```bash
-   # Development mode with auto-reload
    npm run dev
-   
-   # Production mode
-   npm run build
-   npm start
    ```
 
-## Database Schema
+The server will start on `http://localhost:8000`
 
-### Book Schema
-```typescript
-{
-  title: string (required, 1-200 chars)
-  author: string (required, 1-100 chars)
-  genre: enum ['FICTION', 'NON_FICTION', 'SCIENCE', 'HISTORY', 'BIOGRAPHY', 'FANTASY']
-  isbn: string (required, unique, validated format)
-  description: string (optional, max 1000 chars)
-  copies: number (required, min 0, integer)
-  available: boolean (default true, auto-managed)
-  createdAt: Date
-  updatedAt: Date
-}
+## 📜 Available Scripts
+
+| Script          | Description                              |
+| --------------- | ---------------------------------------- |
+| `npm run dev`   | Start development server with hot reload |
+| `npm start`     | Start production server                  |
+| `npm run build` | Compile TypeScript to JavaScript         |
+| `npm run lint`  | Run ESLint for code quality              |
+
+## 🌍 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/bookhive
+# or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/bookhive
+
+# Server
+PORT=5000
+NODE_ENV=development
+
+# CORS (optional)
+CORS_ORIGIN=http://localhost:5173 or '*' for all origins
 ```
 
-### Borrow Schema
-```typescript
-{
-  book: ObjectId (ref: Book, required)
-  quantity: number (required, min 1, integer)
-  dueDate: Date (required, future date)
-  createdAt: Date
-  updatedAt: Date
-}
+## 📚 API Documentation
+
+### Base URL
+
+```
+http://localhost:8000/api
 ```
 
-## Business Logic
+### Books API
 
-### Book Availability
-- Books are automatically marked unavailable when copies reach 0
-- Availability is managed through Mongoose middleware
-- Instance methods available for manual availability updates
+#### Get All Books
 
-### Borrowing Rules
-- Cannot borrow more copies than available
-- Due date must be in the future
-- Book copies are automatically decremented on borrow
-- Validation happens at both controller and model level
+```http
+GET /api/books
+```
 
-## MongoDB Features Used
+**Query Parameters:**
 
-### Aggregation Pipelines
-- **Borrow Summary**: Groups borrows by book with totals
-- **Statistics**: Complex multi-facet aggregation for dashboard data
-- **Overdue Analysis**: Date-based filtering and grouping
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
+- `search`: Search in title and author
+- `genre`: Filter by genre
 
-### Mongoose Middleware
-- **Pre-save**: Validates availability based on copies
-- **Post-save**: Logs operations and updates related documents
-
-### Static Methods
-- `Book.findAvailableBooks()`: Returns only available books
-- `Book.findByGenre()`: Genre-based filtering
-- `Borrow.getBorrowSummary()`: Enhanced aggregation with book details
-- `Borrow.getOverdueBooks()`: Date-based filtering with population
-
-### Instance Methods
-- `book.isAvailable()`: Check real-time availability
-- `book.updateAvailability()`: Manual availability update
-- `borrow.isOverdue()`: Check if borrow is overdue
-
-## Error Handling
-
-The API returns consistent error responses:
+**Response:**
 
 ```json
 {
-  "success": false,
-  "message": "Error description",
-  "errors": {
-    "field": "Specific field error"
+  "success": true,
+  "data": [
+    {
+      "_id": "string",
+      "title": "string",
+      "author": "string",
+      "genre": "string",
+      "isbn": "string",
+      "description": "string",
+      "copies": 5,
+      "available": true,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 10,
+    "totalBooks": 100,
+    "hasNext": true,
+    "hasPrev": false
   }
 }
 ```
 
-### Error Types Handled
-- Validation errors (400)
-- Duplicate key errors (400)
-- Cast errors - Invalid ObjectId (400)
-- Not found errors (404)
-- Server errors (500)
+#### Get Available Books
 
-## Development
-
-### Available Scripts
-```bash
-npm run dev      # Start development server with auto-reload
-npm run build    # Build TypeScript to JavaScript
-npm start        # Start production server
-npm run lint     # Run ESLint (if configured)
+```http
+GET /api/books/available
 ```
 
-### Code Structure
-```
-src/
-├── app/
-│   ├── controller/          # Route handlers
-│   ├── models/             # Mongoose schemas and models
-│   ├── routes/             # Express routes
-│   ├── middlewares/        # Custom middleware
-│   └── constants/          # Application constants
-├── app.ts                  # Express app configuration
-└── server.ts               # Server entry point
+#### Get Books by Genre
+
+```http
+GET /api/books/genre/:genre
 ```
 
-## Contributing
+#### Get Book by ID
 
-1. Follow TypeScript best practices
-2. Use Mongoose validation for data integrity
-3. Handle errors appropriately
-4. Add JSDoc comments for complex functions
-5. Follow the existing code structure
+```http
+GET /api/books/:id
+```
 
-## License
+#### Create Book
 
-MIT License - see LICENSE file for details 
+```http
+POST /api/books
+Content-Type: application/json
+
+{
+  "title": "string",
+  "author": "string",
+  "genre": "string",
+  "isbn": "string",
+  "description": "string",
+  "copies": 5
+}
+```
+
+#### Update Book
+
+```http
+PUT /api/books/:id
+Content-Type: application/json
+
+{
+  "title": "string",
+  "copies": 3
+  // Other updatable fields
+}
+```
+
+#### Update Book Availability
+
+```http
+PUT /api/books/:id/availability
+Content-Type: application/json
+
+{
+  "available": false
+}
+```
+
+#### Delete Book
+
+```http
+DELETE /api/books/:id
+```
+
+### Borrows API
+
+#### Get All Borrows
+
+```http
+GET /api/borrows
+```
+
+**Query Parameters:**
+
+- `page`: Page number
+- `limit`: Items per page
+
+#### Create Borrow
+
+```http
+POST /api/borrows
+Content-Type: application/json
+
+{
+  "book": "book_id",
+  "quantity": 1,
+  "dueDate": "2024-12-31"
+}
+```
+
+#### Get Borrow Summary
+
+```http
+GET /api/borrows/summary
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "string",
+      "book": {
+        "_id": "string",
+        "title": "string",
+        "author": "string",
+        "genre": "string",
+        "isbn": "string"
+      },
+      "totalQuantityBorrowed": 5
+    }
+  ],
+  "count": 10
+}
+```
+
+## 🗄️ Database Models
+
+### Book Model
+
+```typescript
+{
+  title: string;          // Required, 1-200 characters
+  author: string;         // Required, 1-100 characters
+  genre: string;          // Required
+  isbn: string;           // Required, unique
+  description?: string;   // Optional, max 1000 characters
+  copies: number;         // Required, non-negative integer
+  available: boolean;     // Auto-calculated based on copies
+  createdAt: Date;        // Auto-generated
+  updatedAt: Date;        // Auto-generated
+}
+```
+
+### Borrow Model
+
+```typescript
+{
+  book: ObjectId; // Reference to Book
+  quantity: number; // Required, positive integer
+  dueDate: Date; // Required
+  createdAt: Date; // Auto-generated
+  updatedAt: Date; // Auto-generated
+}
+```
+
+## 🚀 Deployment
+
+### Vercel Deployment
+
+The project includes a `vercel.json` configuration for easy deployment:
+
+1. **Install Vercel CLI**
+
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy**
+
+   ```bash
+   vercel
+   ```
+
+3. **Set Environment Variables**
+   Configure your MongoDB URI and other environment variables in the Vercel dashboard.
+
+### Manual Deployment
+
+1. **Build the project**
+
+   ```bash
+   npm run build
+   ```
+
+2. **Start production server**
+   ```bash
+   npm start
+   ```
