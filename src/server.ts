@@ -6,7 +6,7 @@ import app from "./app";
 dotenv.config();
 
 let server: Server;
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 8000;
 const uri = process.env.MONGODB_URI;
 
 const bootstrap = async () => {
@@ -21,7 +21,14 @@ const bootstrap = async () => {
   }
 };
 
-bootstrap();
+// For Vercel serverless functions
+if (process.env.VERCEL) {
+  // Export the app for Vercel
+  module.exports = app;
+} else {
+  // Run normally for local development
+  bootstrap();
+}
 
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection at:", err);
@@ -44,3 +51,6 @@ process.on("uncaughtException", (err) => {
     process.exit(1);
   }
 });
+
+// Default export for Vercel
+export default app;
