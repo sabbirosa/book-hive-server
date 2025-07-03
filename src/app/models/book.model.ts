@@ -9,7 +9,6 @@ export interface IBook extends Document {
   copies: number;
   available: boolean;
   isAvailable(): boolean;
-  updateAvailability(): Promise<void>;
 }
 
 export interface IBookModel extends Model<IBook> {
@@ -74,25 +73,16 @@ bookSchema.index({ genre: 1 });
 bookSchema.index({ available: 1 });
 bookSchema.index({ title: "text", author: "text" }); // Text search
 
-// Pre-save middleware to set availability
+// Pre-save middleware to set availability based on copies
 bookSchema.pre("save", function (next) {
-  if (this.copies <= 0) {
-    this.available = false;
-  } else if (this.copies > 0 && !this.available) {
-    this.available = true;
-  }
+  // Automatically set availability based on copies
+  this.available = this.copies > 0;
   next();
 });
 
-// Instance method to check availability
+// Instance method to check if book is available for borrowing
 bookSchema.methods.isAvailable = function (): boolean {
   return this.available && this.copies > 0;
-};
-
-// Instance method to update availability based on copies
-bookSchema.methods.updateAvailability = async function (): Promise<void> {
-  this.available = this.copies > 0;
-  await this.save();
 };
 
 // Static method to find available books

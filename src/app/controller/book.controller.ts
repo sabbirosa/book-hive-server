@@ -306,7 +306,7 @@ export const deleteBook = async (
   }
 };
 
-// Update book availability (using instance method)
+// Update book availability (using save to trigger pre-save middleware)
 export const updateBookAvailability = async (
   req: Request,
   res: Response,
@@ -314,6 +314,7 @@ export const updateBookAvailability = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    const { available } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -332,7 +333,14 @@ export const updateBookAvailability = async (
       return;
     }
 
-    await book.updateAvailability();
+    // Update availability if provided, but pre-save middleware will override based on copies
+    if (typeof available === "boolean") {
+      book.available = available;
+    }
+    
+    // Save to trigger pre-save middleware which sets availability based on copies
+    await book.save();
+    
     res.json({
       success: true,
       message: "Book availability updated",
