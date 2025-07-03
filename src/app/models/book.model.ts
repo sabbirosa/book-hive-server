@@ -84,13 +84,6 @@ bookSchema.pre("save", function (next) {
   next();
 });
 
-// Post-save middleware for logging
-bookSchema.post("save", function (doc) {
-  console.log(
-    `Book saved: ${doc.title} - Available: ${doc.available}, Copies: ${doc.copies}`
-  );
-});
-
 // Instance method to check availability
 bookSchema.methods.isAvailable = function (): boolean {
   return this.available && this.copies > 0;

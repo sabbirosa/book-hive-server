@@ -235,7 +235,6 @@ export const updateBook = async (
       data: updatedBook,
     });
   } catch (err: any) {
-    console.log(err);
     if (err.name === "ValidationError") {
       res.status(400).json({
         success: false,
