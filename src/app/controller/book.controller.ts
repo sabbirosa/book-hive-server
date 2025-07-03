@@ -216,18 +216,29 @@ export const updateBook = async (
       return;
     }
 
-    const updatedBook = await Book.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updatedBook) {
+    // Find the book first
+    const book = await Book.findById(id);
+    if (!book) {
       res.status(404).json({
         success: false,
         message: "Book not found",
       });
       return;
     }
+
+    // Update the book fields
+    Object.assign(book, req.body);
+
+    // Apply business logic: if copies set to 0, mark as unavailable
+    if (book.copies <= 0) {
+      book.available = false;
+    } else if (book.copies > 0 && req.body.available !== false) {
+      // Only set to true if not explicitly set to false
+      book.available = true;
+    }
+
+    // Save the book (this will trigger pre-save middleware and validation)
+    const updatedBook = await book.save();
 
     res.json({
       success: true,
